@@ -1,6 +1,7 @@
 import { Redis } from '@upstash/redis';
 
 const STATE_KEY = 'mechasino-state';
+const MECHA_STATS_KEY = 'mechasino-mecha-stats';
 
 let redis;
 
@@ -24,4 +25,12 @@ export async function getState() {
 
 export async function setState(state) {
   await getRedis().set(STATE_KEY, state);
+}
+
+export async function getMechaStats() {
+  return (await getRedis().get(MECHA_STATS_KEY)) || {};
+}
+
+export async function setMechaStats(stats) {
+  await getRedis().set(MECHA_STATS_KEY, stats);
 }

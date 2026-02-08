@@ -3,10 +3,12 @@ import { useGame } from '../context/GameContext.jsx';
 import PlayerCard from './PlayerCard.jsx';
 import WagerSelector from './WagerSelector.jsx';
 import GameBoard from './GameBoard.jsx';
+import MechaDatabase from './MechaDatabase.jsx';
 
 export default function Lobby() {
   const { gameState, playerId, leaveGame, error } = useGame();
   const [showWagerSelector, setShowWagerSelector] = useState(false);
+  const [showDatabase, setShowDatabase] = useState(false);
 
   if (!gameState) {
     return (
@@ -22,6 +24,10 @@ export default function Lobby() {
   // If round is active (betting, revealing, or results), show GameBoard
   if (round) {
     return <GameBoard />;
+  }
+
+  if (showDatabase) {
+    return <MechaDatabase onBack={() => setShowDatabase(false)} />;
   }
 
   const currentPlayer = gameState.players.find((p) => p.id === playerId);
@@ -63,6 +69,14 @@ export default function Lobby() {
             START ROUND
           </button>
         )}
+
+        <button
+          onClick={() => setShowDatabase(true)}
+          className="btn-cyber clip-corners w-full text-center text-sm"
+          style={{ borderColor: 'var(--color-accent-gold)', color: 'var(--color-accent-gold)' }}
+        >
+          DATABASE
+        </button>
 
         <button
           onClick={leaveGame}
