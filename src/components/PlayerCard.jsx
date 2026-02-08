@@ -1,5 +1,19 @@
 import { useGame } from '../context/GameContext.jsx';
 
+const BADGE_EMOJIS = {
+  'first-win': '⭐',
+  'streak-2': '2️⃣',
+  'streak-3': '3️⃣',
+  'streak-4': '4️⃣',
+  'streak-5': '5️⃣',
+  'games-100': '💯',
+  'credits-10k': '🤑',
+  'credits-50k': '💰',
+  'same-slot-3': '📜',
+  'same-mecha': '🤖',
+  'big-spender': '🎰',
+};
+
 export default function PlayerCard({ player, isCurrentPlayer }) {
   const { getCredits, gameState, playerId } = useGame();
 
@@ -48,7 +62,31 @@ export default function PlayerCard({ player, isCurrentPlayer }) {
                 {'💩'.repeat(Math.min(player.poopCount, 10))}
               </span>
             )}
+            {player.badges?.length > 0 && (
+              <span className="text-xs" title={`${player.badges.length} badge(s)`}>
+                {player.badges.map((id) => BADGE_EMOJIS[id] || '?').join('')}
+              </span>
+            )}
           </div>
+          {(player.totalWagers || 0) > 0 && (
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap text-[10px] text-text-muted">
+              <span>{player.totalWagers}W</span>
+              <span className="text-white/20">|</span>
+              <span>{player.wins || 0}✓</span>
+              <span className="text-white/20">|</span>
+              <span className={
+                ((player.wins || 0) / player.totalWagers) * 100 >= 50
+                  ? 'text-accent-cyan'
+                  : 'text-accent-magenta'
+              }>
+                {Math.round(((player.wins || 0) / player.totalWagers) * 100)}%
+              </span>
+              <span className="text-white/20">|</span>
+              <span>{(player.totalCreditsWagered || 0).toLocaleString()} bet</span>
+              <span className="text-white/20">|</span>
+              <span className="text-accent-gold">{(player.totalCreditsWon || 0).toLocaleString()} won</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">

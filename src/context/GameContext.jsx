@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useReducer, useEffect, useCallback, useRef, useState } from 'react';
 
 const GameContext = createContext(null);
 
@@ -27,6 +27,8 @@ function reducer(state, action) {
 export function GameProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const playerIdRef = useRef(state.playerId);
+  const knownBadgesRef = useRef(new Set());
+  const [badgeToastQueue, setBadgeToastQueue] = useState([]);
 
   useEffect(() => {
     playerIdRef.current = state.playerId;
@@ -39,7 +41,31 @@ export function GameProvider({ children }) {
       const res = await fetch(`/api/state?playerId=${pid}`);
       if (!res.ok) throw new Error('Failed to fetch state');
       const data = await res.json();
+      // Detect orphaned playerId (player not found in Redis after state reset)
+      if (pid && data.players && !data.players.find((p) => p.id === pid)) {
+        localStorage.removeItem('mechasino-playerId');
+        dispatch({ type: 'SET_PLAYER_ID', payload: null });
+        dispatch({ type: 'SET_GAME_STATE', payload: null });
+        return;
+      }
       dispatch({ type: 'SET_GAME_STATE', payload: data });
+
+      // Detect newly earned badges
+      const currentPlayer = data.players?.find((p) => p.id === pid);
+      if (currentPlayer?.badges) {
+        if (knownBadgesRef.current.size === 0 && currentPlayer.badges.length > 0) {
+          // Initial seed — don't toast existing badges
+          currentPlayer.badges.forEach((b) => knownBadgesRef.current.add(b));
+        } else {
+          const newBadges = currentPlayer.badges.filter(
+            (b) => !knownBadgesRef.current.has(b)
+          );
+          if (newBadges.length > 0) {
+            newBadges.forEach((b) => knownBadgesRef.current.add(b));
+            setBadgeToastQueue((prev) => [...prev, ...newBadges]);
+          }
+        }
+      }
     } catch (err) {
       dispatch({ type: 'SET_ERROR', payload: err.message });
     }
@@ -64,6 +90,7 @@ export function GameProvider({ children }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to join');
       localStorage.setItem('mechasino-playerId', data.playerId);
+      localStorage.setItem('mechasino-playerName', name);
       dispatch({ type: 'SET_PLAYER_ID', payload: data.playerId });
       dispatch({ type: 'SET_LOADING', payload: false });
     } catch (err) {
@@ -131,10 +158,17 @@ export function GameProvider({ children }) {
     }
   }, [fetchState]);
 
+  const dismissBadgeToast = useCallback(() => {
+    setBadgeToastQueue((prev) => prev.slice(1));
+  }, []);
+
   const leaveGame = useCallback(() => {
     localStorage.removeItem('mechasino-playerId');
+    // Keep mechasino-playerName so registration pre-fills on return
     dispatch({ type: 'SET_PLAYER_ID', payload: null });
     dispatch({ type: 'SET_GAME_STATE', payload: null });
+    knownBadgesRef.current = new Set();
+    setBadgeToastQueue([]);
   }, []);
 
   const value = {
@@ -142,6 +176,8 @@ export function GameProvider({ children }) {
     gameState: state.gameState,
     loading: state.loading,
     error: state.error,
+    badgeToastQueue,
+    dismissBadgeToast,
     joinGame,
     startRound,
     placeBet,

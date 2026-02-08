@@ -1,5 +1,6 @@
 import { getMechaStrength } from './mechas.js';
 import { getMechaStats, setMechaStats } from './redis.js';
+import { checkAndAwardBadges } from './badges.js';
 
 export async function checkAndResolveRound(state, force = false) {
   const { round, players } = state;
@@ -64,6 +65,12 @@ export async function checkAndResolveRound(state, force = false) {
     }
   }
   // Losers keep their loss — no refund
+
+  // Check and award badges for all bettors
+  for (const id of bettorIds) {
+    const player = players.find((p) => p.id === id);
+    if (player) checkAndAwardBadges(player, round);
+  }
 
   round.results = { winnerIndex, payouts };
   round.status = 'results';

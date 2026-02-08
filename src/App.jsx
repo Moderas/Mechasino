@@ -2,6 +2,7 @@ import { GameProvider } from './context/GameContext.jsx';
 import { useGame } from './context/GameContext.jsx';
 import PlayerRegistration from './components/PlayerRegistration.jsx';
 import Lobby from './components/Lobby.jsx';
+import BadgeToast from './components/BadgeToast.jsx';
 
 function AppContent() {
   const { playerId } = useGame();
@@ -24,10 +25,10 @@ export default function App() {
           >
             MECHASINO
           </h1>
-          <p className="text-text-muted text-sm mt-1 tracking-wider">DEPLOY. WAGER. DOMINATE.</p>
         </header>
         <AppContent />
       </div>
+      <BadgeToast />
     </GameProvider>
   );
 }

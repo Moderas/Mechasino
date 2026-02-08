@@ -21,6 +21,13 @@ export default async function handler(req, res) {
         p.totalCreditsWon = 0;
         needsSave = true;
       }
+      if (p.badges === undefined) {
+        p.badges = [];
+        p.winStreak = 0;
+        p.lastBetSlots = [];
+        p.betMechaNames = [];
+        needsSave = true;
+      }
     }
 
     if (playerId) {
